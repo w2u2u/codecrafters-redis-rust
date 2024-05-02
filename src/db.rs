@@ -1,25 +1,33 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::SystemTime};
+
+use crate::util::time::is_expired;
 
 pub trait Database {
-    fn get(&self, key: &str) -> Option<String>;
-    fn set(&mut self, key: &str, value: &str, exp: Option<&str>);
+    fn get(&mut self, key: &str) -> Option<String>;
+    fn set(&mut self, key: &str, value: &str, exp: Option<SystemTime>);
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct Value {
     data: String,
-    exp: Option<String>,
+    exp: Option<SystemTime>,
 }
 
 impl Value {
-    pub fn new(value: &str, exp: Option<&str>) -> Self {
+    pub fn new(value: &str, exp: Option<SystemTime>) -> Self {
         Value {
             data: value.to_owned(),
-            exp: exp.map(|e| e.to_owned()),
+            exp,
         }
+    }
+
+    pub fn is_expired(&self) -> bool {
+        self.exp.map(is_expired).is_some_and(|t| t)
     }
 }
 
+#[derive(Debug)]
 pub struct KeyValueDb {
     data: HashMap<String, Value>,
 }
@@ -39,11 +47,20 @@ impl Default for KeyValueDb {
 }
 
 impl Database for KeyValueDb {
-    fn get(&self, key: &str) -> Option<String> {
-        self.data.get(key).map(|v| v.data.to_owned())
+    fn get(&mut self, key: &str) -> Option<String> {
+        if let Some(value) = self.data.get(key) {
+            if value.is_expired() {
+                self.data.remove(key);
+                return None;
+            } else {
+                return Some(value.data.to_owned());
+            }
+        }
+
+        None
     }
 
-    fn set(&mut self, key: &str, value: &str, exp: Option<&str>) {
+    fn set(&mut self, key: &str, value: &str, exp: Option<SystemTime>) {
         self.data.insert(key.to_owned(), Value::new(value, exp));
     }
 }

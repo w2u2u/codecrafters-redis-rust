@@ -27,8 +27,8 @@ impl Command {
         match cmd.as_str() {
             "ping" => Command::Ping(Ping {}),
             "echo" => Command::Echo(Echo::new(args)),
-            "get" => Command::Get(Get::new(args)),
-            "set" => Command::Set(Set::new(args)),
+            "get" => Get::new(args).map_or(Command::Unknown, Command::Get),
+            "set" => Set::new(args).map_or(Command::Unknown, Command::Set),
             _ => Command::Unknown,
         }
     }
