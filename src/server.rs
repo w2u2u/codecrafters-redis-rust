@@ -1,10 +1,19 @@
 use std::{fmt::Display, sync::Arc};
 
 use anyhow::Error;
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::{
+    net::{TcpListener, TcpStream},
+    sync::Mutex,
+};
 
-use crate::{cmd::Command, config::Config, connection::Connection, db::Database};
+use crate::{
+    cmd::{ping::Ping, Command},
+    config::Config,
+    connection::Connection,
+    db::Database,
+};
 
+#[derive(PartialEq, Eq)]
 pub(crate) enum Role {
     Master,
     Slave,
@@ -106,5 +115,22 @@ where
                 Command::Unknown => {}
             }
         }
+    }
+
+    pub async fn connect_to_master(&self) -> Result<TcpStream, Error> {
+        if let Some(replicaof) = self.config.replicaof.clone() {
+            let stream = TcpStream::connect(replicaof).await?;
+            return Ok(stream);
+        }
+
+        Err(Error::msg("no replica of"))
+    }
+
+    pub async fn handshake(&self, mut conn: Connection) -> Result<(), Error> {
+        Ping::new(Some("ping")).send(&mut conn).await?;
+
+        let _frame = conn.read_frame().await?;
+
+        Ok(())
     }
 }

@@ -28,7 +28,7 @@ impl Command {
         let cmd = args.first().map(|s| s.to_lowercase()).unwrap_or_default();
 
         match cmd.as_str() {
-            "ping" => Command::Ping(Ping {}),
+            "ping" => Command::Ping(Ping::new(None)),
             "echo" => Command::Echo(Echo::new(args)),
             "get" => Get::new(args).map_or(Command::Unknown, Command::Get),
             "set" => Set::new(args).map_or(Command::Unknown, Command::Set),

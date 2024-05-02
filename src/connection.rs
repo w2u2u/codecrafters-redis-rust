@@ -38,19 +38,32 @@ impl Connection {
                 self.stream.write_all(b"$-1\r\n").await?;
             }
             Frame::BulkString(s) => {
-                self.stream.write_u8(b'$').await?;
-                self.stream
-                    .write_all(format!("{}\r\n", s.len()).as_bytes())
-                    .await?;
-                self.stream.write_all(s.as_bytes()).await?;
-                self.stream.write_all(b"\r\n").await?;
+                self.write_bulk(s).await?;
             }
-            Frame::Arrays(_) => todo!(),
+            Frame::Arrays(a) => {
+                let l = a.len().to_string();
+                self.stream.write_u8(b'*').await?;
+                self.stream.write_all(l.as_bytes()).await?;
+                self.stream.write_all(b"\r\n").await?;
+                for s in a {
+                    self.write_bulk(s).await?;
+                }
+            }
             Frame::Unknown => todo!(),
         }
 
         self.stream.flush().await?;
 
+        Ok(())
+    }
+
+    async fn write_bulk(&mut self, s: &str) -> Result<(), Error> {
+        let l = s.len().to_string();
+        self.stream.write_u8(b'$').await?;
+        self.stream.write_all(l.as_bytes()).await?;
+        self.stream.write_all(b"\r\n").await?;
+        self.stream.write_all(s.as_bytes()).await?;
+        self.stream.write_all(b"\r\n").await?;
         Ok(())
     }
 }

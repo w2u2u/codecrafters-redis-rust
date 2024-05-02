@@ -14,6 +14,12 @@ async fn main() -> Result<(), Error> {
     let db = Arc::new(Mutex::new(KeyValueDb::default()));
     let server = Arc::new(RedisServer::new(config, db));
 
+    if let Ok(stream) = server.connect_to_master().await {
+        let conn = Connection::new(stream);
+
+        server.handshake(conn).await?;
+    }
+
     let listener = server.listen().await?;
 
     while let Ok((stream, _)) = listener.accept().await {
