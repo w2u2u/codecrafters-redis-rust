@@ -23,8 +23,8 @@ impl Display for Role {
 pub(crate) struct Replication {
     pub(crate) role: Role,
     connected_slaves: u16,
-    master_replid: String,
-    master_repl_offset: i8,
+    pub(crate) master_replid: String,
+    pub(crate) master_repl_offset: i8,
     second_repl_offset: i8,
 }
 
@@ -38,7 +38,7 @@ impl Replication {
             },
             connected_slaves: 0,
             master_replid: String::from("8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
-            master_repl_offset: -1,
+            master_repl_offset: 0,
             second_repl_offset: 0,
         }
     }

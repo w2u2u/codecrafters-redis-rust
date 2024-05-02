@@ -1,6 +1,11 @@
 use anyhow::Error;
 
-use crate::{config::Config, connection::Connection, frame::Frame, server::Replication};
+use crate::{
+    config::Config,
+    connection::Connection,
+    frame::Frame,
+    server::{Replication, Role},
+};
 
 #[derive(Debug)]
 pub(crate) struct Info;
@@ -16,7 +21,20 @@ impl Info {
         _config: &Config,
         repl: &Replication,
     ) -> Result<(), Error> {
-        let frame = Frame::BulkString(format!("role:{}", repl.role));
+        let s = match repl.role {
+            Role::Master => {
+                let info = [
+                    format!("role:{}", repl.role),
+                    format!("master_replid:{}", repl.master_replid),
+                    format!("master_repl_offset:{}", repl.master_repl_offset),
+                ];
+
+                info.join("\n")
+            }
+            Role::Slave => format!("role:{}", repl.role),
+        };
+
+        let frame = Frame::BulkString(s);
 
         conn.write_frame(&frame).await?;
 
