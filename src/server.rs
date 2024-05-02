@@ -7,7 +7,7 @@ use tokio::{
 };
 
 use crate::{
-    cmd::{ping::Ping, Command},
+    cmd::{ping::Ping, replconf::Replconf, Command},
     config::Config,
     connection::Connection,
     db::Database,
@@ -112,7 +112,10 @@ where
                     info.apply(&mut conn, &self.config, &self.replication)
                         .await?;
                 }
-                Command::Unknown => {}
+                Command::Replconf(replconf) => {
+                    replconf.apply(&mut conn).await?;
+                }
+                _ => {}
             }
         }
     }
@@ -128,6 +131,18 @@ where
 
     pub async fn handshake(&self, mut conn: Connection) -> Result<(), Error> {
         Ping::new(Some("ping")).send(&mut conn).await?;
+
+        let _frame = conn.read_frame().await?;
+
+        Replconf::new(vec![String::from("listening-port"), String::from("6380")])
+            .send(&mut conn)
+            .await?;
+
+        let _frame = conn.read_frame().await?;
+
+        Replconf::new(vec![String::from("capa"), String::from("psync2")])
+            .send(&mut conn)
+            .await?;
 
         let _frame = conn.read_frame().await?;
 

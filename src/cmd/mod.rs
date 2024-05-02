@@ -2,6 +2,7 @@ use echo::Echo;
 use get::Get;
 use info::Info;
 use ping::Ping;
+use replconf::Replconf;
 use set::Set;
 
 use crate::frame::Frame;
@@ -10,6 +11,7 @@ pub mod echo;
 pub mod get;
 pub mod info;
 pub mod ping;
+pub mod replconf;
 pub mod set;
 
 #[derive(Debug)]
@@ -19,6 +21,7 @@ pub(crate) enum Command {
     Get(Get),
     Set(Set),
     Info(Info),
+    Replconf(Replconf),
     Unknown,
 }
 
@@ -33,6 +36,7 @@ impl Command {
             "get" => Get::new(args).map_or(Command::Unknown, Command::Get),
             "set" => Set::new(args).map_or(Command::Unknown, Command::Set),
             "info" => Command::Info(Info::new()),
+            "replconf" => Command::Replconf(Replconf::new(args)),
             _ => Command::Unknown,
         }
     }
