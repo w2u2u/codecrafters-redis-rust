@@ -21,7 +21,9 @@ impl RedisServer {
 
     pub async fn handle_connection(&self, mut conn: Connection) -> Result<(), Error> {
         loop {
-            let frame = conn.read_frame().await?;
+            let Ok(frame) = conn.read_frame().await else {
+                break Err(Error::msg("Unable to read frame"));
+            };
 
             println!("Frame: {frame:?}");
 

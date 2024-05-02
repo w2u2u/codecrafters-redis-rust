@@ -44,7 +44,7 @@ impl Frame {
 
                 Ok(Frame::Arrays(array))
             }
-            _ => Ok(Frame::Unknown),
+            _ => Err(Error::msg("Unable to parse frame")),
         }
     }
 

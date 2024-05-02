@@ -1,5 +1,6 @@
 use anyhow::Error;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) struct Set {
     key: String,
