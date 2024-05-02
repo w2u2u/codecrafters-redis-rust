@@ -37,7 +37,14 @@ impl Connection {
             Frame::Null => {
                 self.stream.write_all(b"$-1\r\n").await?;
             }
-            Frame::BulkString(_) => todo!(),
+            Frame::BulkString(s) => {
+                self.stream.write_u8(b'$').await?;
+                self.stream
+                    .write_all(format!("{}\r\n", s.len()).as_bytes())
+                    .await?;
+                self.stream.write_all(s.as_bytes()).await?;
+                self.stream.write_all(b"\r\n").await?;
+            }
             Frame::Arrays(_) => todo!(),
             Frame::Unknown => todo!(),
         }
