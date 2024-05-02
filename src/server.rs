@@ -20,30 +20,30 @@ impl RedisServer {
     }
 
     pub async fn handle_connection(&self, mut conn: Connection) -> Result<(), Error> {
-        let frame = conn.read_frame().await?;
+        loop {
+            let frame = conn.read_frame().await?;
 
-        println!("Frame: {frame:?}");
+            println!("Frame: {frame:?}");
 
-        let cmd = Command::parse(&frame);
+            let cmd = Command::parse(&frame);
 
-        println!("Command: {cmd:?}");
+            println!("Command: {cmd:?}");
 
-        match cmd {
-            Command::Ping(ping) => {
-                ping.apply(&mut conn).await?;
+            match cmd {
+                Command::Ping(ping) => {
+                    ping.apply(&mut conn).await?;
+                }
+                Command::Echo(echo) => {
+                    echo.apply(&mut conn).await?;
+                }
+                Command::Get(get) => {
+                    get.apply().await?;
+                }
+                Command::Set(set) => {
+                    set.apply().await?;
+                }
+                Command::Unknown => {}
             }
-            Command::Echo(echo) => {
-                echo.apply(&mut conn).await?;
-            }
-            Command::Get(get) => {
-                get.apply().await?;
-            }
-            Command::Set(set) => {
-                set.apply().await?;
-            }
-            Command::Unknown => {}
         }
-
-        Ok(())
     }
 }
