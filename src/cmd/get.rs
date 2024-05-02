@@ -1,4 +1,9 @@
+use std::sync::Arc;
+
 use anyhow::Error;
+use tokio::sync::Mutex;
+
+use crate::{connection::Connection, db::Database, frame::Frame};
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -13,7 +18,22 @@ impl Get {
         }
     }
 
-    pub(crate) async fn apply(&self) -> Result<(), Error> {
+    pub(crate) async fn apply<D>(
+        &self,
+        conn: &mut Connection,
+        db: Arc<Mutex<D>>,
+    ) -> Result<(), Error>
+    where
+        D: Database,
+    {
+        let frame = if let Some(value) = db.lock().await.get(&self.key) {
+            Frame::BulkString(value)
+        } else {
+            Frame::Null
+        };
+
+        conn.write_frame(&frame).await?;
+
         Ok(())
     }
 }

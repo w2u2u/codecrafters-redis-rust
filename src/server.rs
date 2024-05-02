@@ -1,15 +1,24 @@
+use std::sync::Arc;
+
 use anyhow::Error;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, sync::Mutex};
 
-use crate::{cmd::Command, config::Config, connection::Connection};
+use crate::{cmd::Command, config::Config, connection::Connection, db::Database};
 
-pub struct RedisServer {
+pub struct RedisServer<D>
+where
+    D: Database,
+{
     config: Config,
+    db: Arc<Mutex<D>>,
 }
 
-impl RedisServer {
-    pub fn new(config: Config) -> Self {
-        RedisServer { config }
+impl<D> RedisServer<D>
+where
+    D: Database,
+{
+    pub fn new(config: Config, db: Arc<Mutex<D>>) -> Self {
+        RedisServer { config, db }
     }
 
     pub async fn listen(&self) -> Result<TcpListener, Error> {
@@ -39,10 +48,12 @@ impl RedisServer {
                     echo.apply(&mut conn).await?;
                 }
                 Command::Get(get) => {
-                    get.apply().await?;
+                    let db = Arc::clone(&self.db);
+                    get.apply(&mut conn, db).await?;
                 }
                 Command::Set(set) => {
-                    set.apply().await?;
+                    let db = Arc::clone(&self.db);
+                    set.apply(&mut conn, db).await?;
                 }
                 Command::Unknown => {}
             }
