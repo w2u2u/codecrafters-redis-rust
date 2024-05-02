@@ -12,8 +12,10 @@ impl Config {
         };
 
         for (index, arg) in args.iter().enumerate() {
-            if arg == "--port" && args.len() > index {
-                config.port = arg.clone();
+            if arg == "--port" {
+                if let Some(port) = args.get(index + 1) {
+                    config.port = port.to_owned();
+                }
             }
         }
 
