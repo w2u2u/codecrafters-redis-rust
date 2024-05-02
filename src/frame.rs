@@ -2,8 +2,6 @@ use std::io::{BufRead, Cursor, Read};
 
 use anyhow::Error;
 
-// read -> buffer -> Frame -> Command -> Frame -> bytes -> write
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Frame {
     SimpleString(String),
@@ -17,18 +15,18 @@ impl Frame {
     pub fn parse(buf: &[u8]) -> Result<Self, Error> {
         let mut cursor = Cursor::new(buf);
 
-        match read_byte(&mut cursor) {
-            Ok(b'+') => {
+        match read_byte(&mut cursor)? {
+            b'+' => {
                 let line = read_line(&mut cursor)?;
 
                 Ok(Frame::SimpleString(line))
             }
-            Ok(b'$') => {
+            b'$' => {
                 let bulk_string = read_bulk_string(&mut cursor)?;
 
                 Ok(Frame::BulkString(bulk_string))
             }
-            Ok(b'*') => {
+            b'*' => {
                 let count = read_line(&mut cursor)?.parse::<usize>().unwrap_or(0);
 
                 let mut array = Vec::with_capacity(count);
