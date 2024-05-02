@@ -19,6 +19,12 @@ impl Config {
                     config.port = port.to_owned();
                 }
             }
+
+            if arg == "--replicaof" {
+                if let (Some(host), Some(port)) = (args.get(index + 1), args.get(index + 2)) {
+                    config.replicaof = Some(format!("{}:{}", host, port));
+                }
+            }
         }
 
         config

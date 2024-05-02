@@ -14,9 +14,9 @@ impl Info {
         &self,
         conn: &mut Connection,
         _config: &Config,
-        _replication: &Replication,
+        repl: &Replication,
     ) -> Result<(), Error> {
-        let frame = Frame::BulkString(String::from("role:master"));
+        let frame = Frame::BulkString(format!("role:{}", repl.role));
 
         conn.write_frame(&frame).await?;
 

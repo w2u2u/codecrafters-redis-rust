@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc};
 
 use anyhow::Error;
 use tokio::{net::TcpListener, sync::Mutex};
@@ -10,9 +10,18 @@ pub(crate) enum Role {
     Slave,
 }
 
+impl Display for Role {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Role::Master => write!(f, "master"),
+            Role::Slave => write!(f, "slave"),
+        }
+    }
+}
+
 #[allow(dead_code)]
 pub(crate) struct Replication {
-    role: Role,
+    pub(crate) role: Role,
     connected_slaves: u16,
     master_replid: String,
     master_repl_offset: i8,
