@@ -1,5 +1,6 @@
 use echo::Echo;
 use get::Get;
+use info::Info;
 use ping::Ping;
 use set::Set;
 
@@ -7,6 +8,7 @@ use crate::frame::Frame;
 
 pub mod echo;
 pub mod get;
+pub mod info;
 pub mod ping;
 pub mod set;
 
@@ -16,6 +18,7 @@ pub(crate) enum Command {
     Echo(Echo),
     Get(Get),
     Set(Set),
+    Info(Info),
     Unknown,
 }
 
@@ -29,6 +32,7 @@ impl Command {
             "echo" => Command::Echo(Echo::new(args)),
             "get" => Get::new(args).map_or(Command::Unknown, Command::Get),
             "set" => Set::new(args).map_or(Command::Unknown, Command::Set),
+            "info" => Command::Info(Info::new()),
             _ => Command::Unknown,
         }
     }

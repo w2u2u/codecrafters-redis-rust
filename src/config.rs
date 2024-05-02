@@ -2,6 +2,7 @@ use std::env;
 
 pub struct Config {
     pub port: String,
+    pub replicaof: Option<String>,
 }
 
 impl Config {
@@ -9,6 +10,7 @@ impl Config {
         let args: Vec<String> = env::args().collect();
         let mut config = Config {
             port: String::from("6379"),
+            replicaof: None,
         };
 
         for (index, arg) in args.iter().enumerate() {

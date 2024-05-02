@@ -5,10 +5,41 @@ use tokio::{net::TcpListener, sync::Mutex};
 
 use crate::{cmd::Command, config::Config, connection::Connection, db::Database};
 
+pub(crate) enum Role {
+    Master,
+    Slave,
+}
+
+#[allow(dead_code)]
+pub(crate) struct Replication {
+    role: Role,
+    connected_slaves: u16,
+    master_replid: String,
+    master_repl_offset: i8,
+    second_repl_offset: i8,
+}
+
+impl Replication {
+    fn new(config: &Config) -> Self {
+        Replication {
+            role: if config.replicaof.is_some() {
+                Role::Slave
+            } else {
+                Role::Master
+            },
+            connected_slaves: 0,
+            master_replid: String::from("8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
+            master_repl_offset: -1,
+            second_repl_offset: 0,
+        }
+    }
+}
+
 pub struct RedisServer<D>
 where
     D: Database,
 {
+    replication: Replication,
     config: Config,
     db: Arc<Mutex<D>>,
 }
@@ -18,7 +49,11 @@ where
     D: Database,
 {
     pub fn new(config: Config, db: Arc<Mutex<D>>) -> Self {
-        RedisServer { config, db }
+        RedisServer {
+            replication: Replication::new(&config),
+            config,
+            db,
+        }
     }
 
     pub async fn listen(&self) -> Result<TcpListener, Error> {
@@ -54,6 +89,10 @@ where
                 Command::Set(set) => {
                     let db = Arc::clone(&self.db);
                     set.apply(&mut conn, db).await?;
+                }
+                Command::Info(info) => {
+                    info.apply(&mut conn, &self.config, &self.replication)
+                        .await?;
                 }
                 Command::Unknown => {}
             }
