@@ -7,7 +7,7 @@ use tokio::{
 };
 
 use crate::{
-    cmd::{ping::Ping, replconf::Replconf, Command},
+    cmd::{ping::Ping, psync::Psync, replconf::Replconf, Command},
     config::Config,
     connection::Connection,
     db::Database,
@@ -115,6 +115,9 @@ where
                 Command::Replconf(replconf) => {
                     replconf.apply(&mut conn).await?;
                 }
+                Command::Psync(psync) => {
+                    psync.apply(&mut conn, &self.replication).await?;
+                }
                 _ => {}
             }
         }
@@ -141,6 +144,12 @@ where
         let _frame = conn.read_frame().await?;
 
         Replconf::new(vec![String::from("capa"), String::from("psync2")])
+            .send(&mut conn)
+            .await?;
+
+        let _frame = conn.read_frame().await?;
+
+        Psync::new(vec![String::from("?"), String::from("-1")])
             .send(&mut conn)
             .await?;
 

@@ -2,6 +2,7 @@ use echo::Echo;
 use get::Get;
 use info::Info;
 use ping::Ping;
+use psync::Psync;
 use replconf::Replconf;
 use set::Set;
 
@@ -11,6 +12,7 @@ pub mod echo;
 pub mod get;
 pub mod info;
 pub mod ping;
+pub mod psync;
 pub mod replconf;
 pub mod set;
 
@@ -22,6 +24,7 @@ pub(crate) enum Command {
     Set(Set),
     Info(Info),
     Replconf(Replconf),
+    Psync(Psync),
     Unknown,
 }
 
@@ -37,6 +40,7 @@ impl Command {
             "set" => Set::new(args).map_or(Command::Unknown, Command::Set),
             "info" => Command::Info(Info::new()),
             "replconf" => Command::Replconf(Replconf::new(args)),
+            "psync" => Command::Psync(Psync::new(args)),
             _ => Command::Unknown,
         }
     }
