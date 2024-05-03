@@ -4,7 +4,7 @@ use crate::{
     config::Config,
     connection::Connection,
     frame::Frame,
-    server::{Replication, Role},
+    replication::{Replication, Role},
 };
 
 #[derive(Debug)]

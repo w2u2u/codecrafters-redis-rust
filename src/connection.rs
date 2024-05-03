@@ -49,7 +49,10 @@ impl Connection {
                     self.write_bulk(s).await?;
                 }
             }
-            Frame::Unknown => todo!(),
+            Frame::BulkBytes(b) => {
+                self.write_bytes(b).await?;
+            }
+            Frame::Error => {}
         }
 
         self.stream.flush().await?;
@@ -64,6 +67,15 @@ impl Connection {
         self.stream.write_all(b"\r\n").await?;
         self.stream.write_all(s.as_bytes()).await?;
         self.stream.write_all(b"\r\n").await?;
+        Ok(())
+    }
+
+    async fn write_bytes(&mut self, b: &[u8]) -> Result<(), Error> {
+        let l = b.len().to_string();
+        self.stream.write_u8(b'$').await?;
+        self.stream.write_all(l.as_bytes()).await?;
+        self.stream.write_all(b"\r\n").await?;
+        self.stream.write_all(b).await?;
         Ok(())
     }
 }

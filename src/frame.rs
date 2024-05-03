@@ -6,9 +6,10 @@ use anyhow::Error;
 pub enum Frame {
     SimpleString(String),
     BulkString(String),
+    BulkBytes(Vec<u8>),
     Arrays(Vec<String>),
     Null,
-    Unknown,
+    Error,
 }
 
 impl Frame {
