@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Error;
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::Mutex,
+    sync::{broadcast::Sender, Mutex},
 };
 
 use crate::{
@@ -11,6 +11,7 @@ use crate::{
     config::Config,
     connection::Connection,
     db::Database,
+    frame::Frame,
     replication::Replication,
 };
 
@@ -42,7 +43,13 @@ where
         Ok(listener)
     }
 
-    pub async fn handle_connection(&self, mut conn: Connection) -> Result<(), Error> {
+    pub async fn handle_connection(
+        &self,
+        mut conn: Connection,
+        sender: Arc<Sender<Frame>>,
+    ) -> Result<(), Error> {
+        let sender = Arc::clone(&sender);
+
         loop {
             let Ok(frame) = conn.read_frame().await else {
                 break Err(Error::msg("Unable to read frame"));
@@ -65,9 +72,11 @@ where
                     let db = Arc::clone(&self.db);
                     get.apply(&mut conn, db).await?;
                 }
-                Command::Set(set) => {
+                Command::Set(ref set) => {
                     let db = Arc::clone(&self.db);
                     set.apply(&mut conn, db).await?;
+
+                    sender.send(frame)?;
                 }
                 Command::Info(info) => {
                     info.apply(&mut conn, &self.config, &self.replication)
@@ -78,6 +87,12 @@ where
                 }
                 Command::Psync(psync) => {
                     psync.apply(&mut conn, &self.replication).await?;
+
+                    let mut receiver = sender.subscribe();
+
+                    while let Ok(f) = receiver.recv().await {
+                        conn.write_frame(&f).await?;
+                    }
                 }
                 _ => {}
             }

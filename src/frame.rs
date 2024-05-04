@@ -2,7 +2,7 @@ use std::io::{BufRead, Cursor, Read};
 
 use anyhow::Error;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Frame {
     SimpleString(String),
     BulkString(String),
